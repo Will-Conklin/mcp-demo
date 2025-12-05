@@ -40,31 +40,48 @@ python main.py
 
 ### Configuring MCP Client
 
-Add this server to your MCP client configuration (e.g., Claude Desktop):
+Add this server to your MCP client configuration. The configuration file location varies by OS:
 
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+**Recommended configuration using uv** (replace path with your project location):
 ```json
 {
   "mcpServers": {
     "tinydb": {
-      "command": "python",
+      "command": "/Users/YOUR_USERNAME/.local/bin/uv",
+      "args": [
+        "--directory",
+        "/path/to/frosty-blackwell",
+        "run",
+        "python",
+        "main.py"
+      ]
+    }
+  }
+}
+```
+
+**Important**: GUI applications like Claude Desktop don't inherit your terminal's PATH. Use absolute paths for both the `command` and the project directory.
+
+**Alternative configuration using direct Python** (requires manual venv activation):
+```json
+{
+  "mcpServers": {
+    "tinydb": {
+      "command": "/path/to/frosty-blackwell/.venv/bin/python",
       "args": ["/path/to/frosty-blackwell/main.py"]
     }
   }
 }
 ```
 
-Or using uv:
-```json
-{
-  "mcpServers": {
-    "tinydb": {
-      "command": "uv",
-      "args": ["run", "python", "main.py"],
-      "cwd": "/path/to/frosty-blackwell"
-    }
-  }
-}
-```
+After updating the configuration:
+1. Save the file
+2. Restart Claude Desktop
+3. The TinyDB tools and resources will appear in the MCP tools list
 
 ## Example Operations
 
@@ -147,7 +164,44 @@ frosty-blackwell/
 
 ### Testing
 
-You can test the server using the MCP Inspector or any MCP client. The server runs over stdio transport and follows the MCP specification.
+Run the test suite with pytest:
+```bash
+uv run pytest tests/ -v
+```
+
+The test suite includes 46 tests covering:
+- TinyDBManager class (9 tests)
+- All MCP tools (23 tests)
+- All MCP resources (14 tests)
+
+You can also test the server using the MCP Inspector or any MCP client. The server runs over stdio transport and follows the MCP specification.
+
+## Troubleshooting
+
+### "Failed to spawn process" error in Claude Desktop
+
+If you see this error in the Claude Desktop logs (`~/Library/Logs/Claude/mcp-server-tinydb.log` on macOS):
+
+```
+Failed to spawn process: No such file or directory
+```
+
+**Solution**: Use the absolute path to the `uv` command in your configuration:
+```bash
+# Find your uv path
+which uv
+
+# Use that full path in claude_desktop_config.json
+# Example: /Users/YOUR_USERNAME/.local/bin/uv
+```
+
+GUI applications don't have access to your terminal's PATH environment variable, so relative commands like `uv` won't be found.
+
+### Finding Claude Desktop logs
+
+- **macOS**: `~/Library/Logs/Claude/mcp-server-tinydb.log`
+- **Windows**: `%APPDATA%\Claude\logs\mcp-server-tinydb.log`
+- **Linux**: `~/.config/Claude/logs/mcp-server-tinydb.log`
 
 ## License
 
