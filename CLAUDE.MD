@@ -121,8 +121,8 @@ uv run ruff format .
 
 ### Type Check
 ```bash
-# Run mypy type checker
-uv run mypy src/ main.py
+# Run ty type checker
+uv run ty check
 ```
 
 ### Pre-commit Hooks
@@ -144,7 +144,7 @@ uv run pre-commit autoupdate
 - Ruff linting (with auto-fix)
 - Ruff formatting
 - TruffleHog secrets scanner (blocks commits containing secrets)
-- Mypy type checking (strict mode on src/, relaxed on tests/)
+- ty type checking (Astral's fast type checker)
 - Pytest (runs full test suite)
 
 **Note:** Hooks run automatically on every commit to ensure code quality and security.
@@ -276,7 +276,7 @@ See `.vscode/` directory for complete configuration.
 ### Development
 - **pytest >= 8.0.0**: Testing framework
 - **ruff >= 0.8.0**: Fast Python linter and code formatter
-- **mypy >= 1.13.0**: Static type checker for Python
+- **ty >= 0.0.1a32**: Fast static type checker from Astral (alpha)
 - **pre-commit >= 4.0.0**: Git hook framework for automated quality checks
 - **trufflehog** (system): Secrets detection and prevention (installed via Homebrew)
 
