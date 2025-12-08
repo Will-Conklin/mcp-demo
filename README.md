@@ -225,6 +225,23 @@ mcp-tinydb-server/
 - mcp[cli] >= 1.23.1
 - tinydb >= 4.8.0
 
+### VS Code Tasks
+
+This project includes VS Code tasks for common operations. Run tasks via `Cmd+Shift+P` → "Tasks: Run Task":
+
+**Quick Commands:**
+- `⇧⌘B` - Build Docker image
+- Testing panel - Run tests with UI
+- `F5` - Debug MCP server or tests
+
+**Available Tasks:**
+- Testing: Run All Tests, Run with Coverage
+- Code Quality: Lint, Fix, Format with Ruff
+- Docker: Build, Start, Stop, View Logs
+- Development: Run MCP Server, Install Dependencies
+
+See `.vscode/tasks.json` for the full list of available tasks.
+
 ### Testing
 
 Run the test suite with pytest:

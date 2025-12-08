@@ -18,6 +18,11 @@ This file contains information for Claude Code to better understand and work wit
 
 ```
 mcp-tinydb-server/
+├── .vscode/                    # VS Code configuration
+│   ├── tasks.json             # Build and test tasks
+│   ├── launch.json            # Debug configurations
+│   ├── settings.json          # Project settings
+│   └── extensions.json        # Recommended extensions
 ├── src/
 │   ├── __init__.py
 │   └── mcp_tinydb_server.py   # Main server implementation
@@ -136,6 +141,55 @@ uv run pre-commit autoupdate
 - Pytest (runs full test suite)
 
 **Note:** Hooks run automatically on every commit to ensure code quality and security.
+
+### VS Code Tasks
+
+**Quick Commands:**
+- Press `⇧⌘B` (Cmd+Shift+B) to run default build task (Docker: Build Image)
+- Press `⇧⌘T` to open test panel
+- Press `F5` to start debugger
+
+**Available Tasks** (Run via `Cmd+Shift+P` → "Tasks: Run Task"):
+
+**Testing:**
+- Run All Tests (default test task)
+- Run Tests with Coverage
+- Run Specific Test File
+
+**Code Quality:**
+- Lint with Ruff
+- Fix with Ruff
+- Format with Ruff
+- Run Pre-commit Hooks
+- Full Quality Check (lint + format + test)
+
+**Docker:**
+- Docker: Build Image (default build task)
+- Docker: Start with Compose
+- Docker: Stop Compose
+- Docker: View Logs
+- Docker: Rebuild and Restart
+- Docker: Run Interactive
+
+**Development:**
+- Run MCP Server (Local)
+- Install Dependencies
+- Install Pre-commit Hooks
+- Build and Test
+
+**Debug Configurations:**
+- Run MCP Server (F5)
+- Run Current Test File
+- Run All Tests
+- Run Tests with Coverage
+- Docker: Attach to Running Container
+
+**Recommended Extensions:**
+- Python, Pylance, Ruff
+- Docker, YAML, TOML
+- GitLens, Markdown
+
+See `.vscode/` directory for complete configuration.
 
 ### MCP Server Configuration
 
