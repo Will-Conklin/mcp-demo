@@ -217,15 +217,12 @@ def update_documents(field: str, value: Any, updates: dict,
 
 
 @mcp.tool()
-def delete_documents(field: str | None = None, value: Any | None = None,
-                    table: str = "default") -> dict:
-    """Delete documents from TinyDB.
-
-    Warning: If no field/value is provided, this will delete ALL documents in the table.
+def delete_documents(field: str, value: Any, table: str = "default") -> dict:
+    """Delete documents from TinyDB matching specific criteria.
 
     Args:
-        field: Field name to match (optional, deletes all if None)
-        value: Value to match (required if field provided)
+        field: Field name to match (required)
+        value: Value to match (required)
         table: Table name (default: "default")
 
     Returns:
@@ -233,33 +230,14 @@ def delete_documents(field: str | None = None, value: Any | None = None,
     """
     try:
         tbl = db_manager.get_table(table)
+        Q = Query()
+        doc_ids = tbl.remove(Q[field] == value)
 
-        # If no field/value, delete all documents
-        if field is None:
-            count_before = len(tbl)
-            tbl.truncate()
-            return {
-                "success": True,
-                "table": table,
-                "deleted_count": count_before,
-                "warning": "All documents in table were deleted"
-            }
-        else:
-            # Validate that value is provided if field is specified
-            if value is None:
-                return {
-                    "success": False,
-                    "error": "Value must be provided when field is specified"
-                }
-
-            Q = Query()
-            doc_ids = tbl.remove(Q[field] == value)
-
-            return {
-                "success": True,
-                "table": table,
-                "deleted_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0)
-            }
+        return {
+            "success": True,
+            "table": table,
+            "deleted_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0)
+        }
     except Exception as e:
         return {
             "success": False,

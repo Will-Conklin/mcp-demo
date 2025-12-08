@@ -239,27 +239,6 @@ class TestDeleteDocuments:
         assert result["success"] is True
         assert result["deleted_count"] == 0
 
-    def test_delete_all_documents(self):
-        """Test deleting all documents in a table."""
-        insert_document({"name": "Alice"})
-        insert_document({"name": "Bob"})
-
-        result = delete_documents()
-
-        assert result["success"] is True
-        assert result["deleted_count"] == 2
-        assert "warning" in result
-
-        # Verify table is empty
-        query_result = query_documents()
-        assert query_result["count"] == 0
-
-    def test_delete_field_without_value(self):
-        """Test deleting with field but no value."""
-        result = delete_documents(field="name")
-
-        assert result["success"] is False
-        assert "error" in result
 
 
 class TestListTables:

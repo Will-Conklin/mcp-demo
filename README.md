@@ -46,15 +46,15 @@ Add this server to your MCP client configuration. The configuration file locatio
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-**Recommended configuration using uv** (replace path with your project location):
+**Recommended configuration using uv**:
 ```json
 {
   "mcpServers": {
     "tinydb": {
-      "command": "/Users/YOUR_USERNAME/.local/bin/uv",
+      "command": "/path/to/uv",
       "args": [
         "--directory",
-        "/path/to/frosty-blackwell",
+        "/path/to/mcp-tinydb-server",
         "run",
         "python",
         "main.py"
@@ -64,15 +64,18 @@ Add this server to your MCP client configuration. The configuration file locatio
 }
 ```
 
-**Important**: GUI applications like Claude Desktop don't inherit your terminal's PATH. Use absolute paths for both the `command` and the project directory.
+**Important**:
+- Replace `/path/to/uv` with your uv installation path (find it with `which uv` in terminal)
+- Replace `/path/to/mcp-tinydb-server` with your project directory
+- GUI applications like Claude Desktop don't inherit your terminal's PATH, so use absolute paths
 
 **Alternative configuration using direct Python** (requires manual venv activation):
 ```json
 {
   "mcpServers": {
     "tinydb": {
-      "command": "/path/to/frosty-blackwell/.venv/bin/python",
-      "args": ["/path/to/frosty-blackwell/main.py"]
+      "command": "/path/to/mcp-tinydb-server/.venv/bin/python",
+      "args": ["/path/to/mcp-tinydb-server/main.py"]
     }
   }
 }
@@ -119,8 +122,6 @@ Use the delete_documents tool:
 - field: "name"
 - value: "Alice"
 - table: "users"
-
-WARNING: Calling without field/value will delete ALL documents!
 ```
 
 ### List Tables
@@ -145,10 +146,15 @@ The server creates a `tinydb_data.json` file in the project root to store all da
 ## Project Structure
 
 ```
-frosty-blackwell/
+mcp-tinydb-server/
 ├── src/
 │   ├── __init__.py
 │   └── mcp_tinydb_server.py   # Main server implementation
+├── tests/                      # Test suite
+│   ├── __init__.py
+│   ├── test_tinydb_manager.py
+│   ├── test_tools.py
+│   └── test_resources.py
 ├── main.py                     # Entry point
 ├── pyproject.toml             # Dependencies
 ├── tinydb_data.json           # Database file (created on first use)

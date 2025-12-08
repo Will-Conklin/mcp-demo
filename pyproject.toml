@@ -1,7 +1,7 @@
 [project]
-name = "frosty-blackwell"
+name = "mcp-tinydb-server"
 version = "0.1.0"
-description = "Add your description here"
+description = "Model Context Protocol server for TinyDB document database operations"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
