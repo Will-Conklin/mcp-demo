@@ -3,11 +3,17 @@
 import os
 from typing import TYPE_CHECKING, Any
 
+import logfire
 from mcp.server.fastmcp import FastMCP
 from tinydb import Query, TinyDB
 
+from src.config import configure_logging, settings
+
 if TYPE_CHECKING:
     from tinydb.table import Table
+
+# Configure logging on module import
+configure_logging()
 
 
 class TinyDBManager:
@@ -88,14 +94,15 @@ class TinyDBManager:
 
 # Initialize FastMCP server
 mcp = FastMCP(
-    name="TinyDB MCP Server",
+    name=settings.server_name,
     instructions="A Model Context Protocol server for TinyDB operations. "
     "Provides tools for document insertion, querying, updating, "
     "and deletion, plus resources for database statistics.",
 )
 
-# Initialize database manager with configurable path
-db_manager = TinyDBManager(db_path=os.getenv("TINYDB_PATH", "tinydb_data.json"))
+# Initialize database manager with settings
+db_manager = TinyDBManager(db_path=str(settings.tinydb_path))
+logfire.info("Database manager initialized", db_path=str(settings.tinydb_path))
 
 
 # Tools
@@ -113,17 +120,21 @@ def insert_document(data: dict, table: str = "default") -> dict:
     try:
         # Validate data is a dictionary
         if not isinstance(data, dict):
+            logfire.warn("Invalid data type", expected="dict", got=type(data).__name__)
             return {
                 "success": False,
                 "error": f"Data must be a dictionary, got {type(data).__name__}",
             }
 
-        # Get table and insert document
-        tbl = db_manager.get_table(table)
-        doc_id = tbl.insert(data)
+        with logfire.span("insert_document", table=table, data_keys=list(data.keys())):
+            # Get table and insert document
+            tbl = db_manager.get_table(table)
+            doc_id = tbl.insert(data)
 
-        return {"success": True, "document_id": doc_id, "table": table}
+            logfire.info("Document inserted", doc_id=doc_id, table=table)
+            return {"success": True, "document_id": doc_id, "table": table}
     except Exception as e:
+        logfire.error("Insert failed", error=str(e), table=table)
         return {"success": False, "error": str(e)}
 
 

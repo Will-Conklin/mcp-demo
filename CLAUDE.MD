@@ -25,8 +25,10 @@ mcp-tinydb-server/
 │   └── extensions.json        # Recommended extensions
 ├── src/
 │   ├── __init__.py
-│   └── mcp_tinydb_server.py   # Main server implementation
-├── tests/                      # Test suite (44 tests)
+│   ├── mcp_tinydb_server.py   # Main server implementation
+│   ├── config.py              # Pydantic Settings configuration
+│   └── models.py              # Pydantic data models
+├── tests/                      # Test suite (51 tests)
 │   ├── __init__.py
 │   ├── test_tinydb_manager.py
 │   ├── test_tools.py
@@ -69,6 +71,28 @@ ec8bbb5 docs: add project documentation
 83fd24d feat: implement TinyDB MCP server
 7220742 build: initialize project with dependencies
 4205d5b Initial commit
+```
+
+## Configuration
+
+The server uses Pydantic Settings for configuration management. Settings can be configured via:
+1. Environment variables
+2. `.env` file (copy from `.env.example`)
+3. Default values
+
+**Available Settings:**
+- `TINYDB_PATH`: Path to database file (default: `tinydb_data.json`)
+- `LOG_LEVEL`: Logging level (default: `INFO`)
+- `ENABLE_LOGFIRE`: Enable Logfire remote logging (default: `false`)
+- `LOGFIRE_TOKEN`: API token for Logfire (optional)
+- `SERVER_NAME`: Server name (default: `TinyDB MCP Server`)
+- `SERVER_VERSION`: Server version (default: `0.1.0`)
+
+**Example .env file:**
+```bash
+TINYDB_PATH=data/my_database.json
+LOG_LEVEL=DEBUG
+ENABLE_LOGFIRE=false
 ```
 
 ## Commands & Scripts
@@ -236,6 +260,9 @@ See `.vscode/` directory for complete configuration.
 - **FastMCP**: Decorator-based MCP server framework
 - **Transport**: stdio (standard for MCP servers)
 - **Database**: TinyDB with JSON file storage
+- **Configuration**: Pydantic Settings with environment variables
+- **Logging**: Logfire for structured logging and observability
+- **Models**: Pydantic models for data validation
 
 ### Design Decisions
 1. **Synchronous Operations**: TinyDB is sync-only, no async wrappers needed
@@ -270,8 +297,10 @@ See `.vscode/` directory for complete configuration.
 ## Dependencies
 
 ### Production
-- **mcp[cli] >= 1.23.1**: Model Context Protocol framework with CLI tools
+- **mcp[cli] >= 1.23.1**: Model Context Protocol framework with CLI tools (includes Pydantic)
 - **tinydb >= 4.8.0**: Lightweight document-oriented database
+- **pydantic-settings >= 2.0.0**: Configuration management with environment variables
+- **logfire >= 0.1.0**: Structured logging and observability from Pydantic team
 
 ### Development
 - **pytest >= 8.0.0**: Testing framework
