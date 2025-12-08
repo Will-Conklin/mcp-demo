@@ -76,7 +76,40 @@ Add this server to your MCP client configuration. The configuration file locatio
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-**Recommended configuration using uv**:
+**Recommended: Docker configuration** (no Python/dependencies needed):
+
+First, build the Docker image:
+```bash
+docker build -t mcp-tinydb-server .
+```
+
+Then add to Claude Desktop config:
+```json
+{
+  "mcpServers": {
+    "tinydb": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--name", "mcp-tinydb-claude",
+        "-v", "mcp-tinydb-data:/data",
+        "mcp-tinydb-server"
+      ]
+    }
+  }
+}
+```
+
+**Benefits of Docker configuration:**
+- No local Python or uv installation required
+- Isolated environment
+- Persistent data via Docker volume
+- Automatic cleanup with `--rm` flag
+- Easy to update (just rebuild image)
+
+**Alternative: Local development with uv**:
 ```json
 {
   "mcpServers": {
@@ -94,22 +127,10 @@ Add this server to your MCP client configuration. The configuration file locatio
 }
 ```
 
-**Important**:
+**Important for local development**:
 - Replace `/path/to/uv` with your uv installation path (find it with `which uv` in terminal)
 - Replace `/path/to/mcp-tinydb-server` with your project directory
 - GUI applications like Claude Desktop don't inherit your terminal's PATH, so use absolute paths
-
-**Alternative configuration using direct Python** (requires manual venv activation):
-```json
-{
-  "mcpServers": {
-    "tinydb": {
-      "command": "/path/to/mcp-tinydb-server/.venv/bin/python",
-      "args": ["/path/to/mcp-tinydb-server/main.py"]
-    }
-  }
-}
-```
 
 After updating the configuration:
 1. Save the file

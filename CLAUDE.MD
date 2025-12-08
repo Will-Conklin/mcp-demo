@@ -138,9 +138,32 @@ uv run pre-commit autoupdate
 **Note:** Hooks run automatically on every commit to ensure code quality and security.
 
 ### MCP Server Configuration
-The server is configured in Claude Desktop at:
+
+**Claude Desktop Config Location:**
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+**Recommended: Docker Configuration**
+```json
+{
+  "mcpServers": {
+    "tinydb": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--name", "mcp-tinydb-claude",
+        "-v", "mcp-tinydb-data:/data",
+        "mcp-tinydb-server"
+      ]
+    }
+  }
+}
+```
+
+**Alternative: Local Development**
 - Use absolute path to `uv` command (find with `which uv`)
+- Point to project directory
 
 ### Logs Location
 - macOS: `~/Library/Logs/Claude/mcp-server-tinydb.log`
