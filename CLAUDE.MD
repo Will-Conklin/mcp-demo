@@ -290,7 +290,8 @@ See `.vscode/` directory for complete configuration.
 - **9 tests**: TinyDBManager class functionality
 - **23 tests**: All MCP tools (insert, query, update, delete, list)
 - **14 tests**: All MCP resources (stats, tables, table contents)
-- **Total**: 44 tests, all passing
+- **7 tests**: Integration tests (full CRUD workflow, multi-table, resources, error handling, persistence, bulk ops)
+- **Total**: 51 tests, all passing
 
 ### Test Strategy
 - Each test uses isolated temporary database
