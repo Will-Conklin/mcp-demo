@@ -117,9 +117,10 @@ uv run pre-commit autoupdate
 **Hooks configured:**
 - Ruff linting (with auto-fix)
 - Ruff formatting
+- TruffleHog secrets scanner (blocks commits containing secrets)
 - Pytest (runs full test suite)
 
-**Note:** Hooks run automatically on every commit to ensure code quality.
+**Note:** Hooks run automatically on every commit to ensure code quality and security.
 
 ### MCP Server Configuration
 The server is configured in Claude Desktop at:
@@ -142,6 +143,7 @@ The server is configured in Claude Desktop at:
 3. **Table-based Organization**: Uses TinyDB's native table feature
 4. **Required Parameters for Deletion**: Security feature to prevent accidental data loss
 5. **Comprehensive Error Handling**: All operations wrapped in try-except with user-friendly errors
+6. **Automated Security Scanning**: TruffleHog pre-commit hook prevents committing secrets
 
 ### MCP Server Components
 
@@ -173,6 +175,7 @@ The server is configured in Claude Desktop at:
 - **pytest >= 8.0.0**: Testing framework
 - **ruff >= 0.8.0**: Fast Python linter and code formatter
 - **pre-commit >= 4.0.0**: Git hook framework for automated quality checks
+- **trufflehog** (system): Secrets detection and prevention (installed via Homebrew)
 
 ### Python Version
 - Requires Python >= 3.14

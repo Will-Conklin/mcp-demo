@@ -9,6 +9,15 @@ repos:
       # Run the formatter
       - id: ruff-format
 
+  # TruffleHog secrets detection
+  - repo: local
+    hooks:
+      - id: trufflehog
+        name: TruffleHog secrets scanner
+        entry: /opt/homebrew/bin/trufflehog filesystem . --only-verified --fail
+        language: system
+        pass_filenames: false
+
   # Run tests before commit
   - repo: local
     hooks:
