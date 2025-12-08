@@ -29,6 +29,9 @@ mcp-tinydb-server/
 ├── main.py                     # Entry point
 ├── pyproject.toml             # Dependencies and project config
 ├── uv.lock                    # Dependency lock file
+├── Dockerfile                 # Docker container configuration
+├── docker-compose.yaml        # Docker Compose orchestration
+├── .dockerignore              # Docker build exclusions
 ├── .pre-commit-config.yaml    # Pre-commit hooks configuration
 ├── tinydb_data.json           # Database file (created on first use)
 ├── README.md                  # User documentation
@@ -71,8 +74,20 @@ uv sync
 ```
 
 ### Run MCP Server
+
+**Local (Development):**
 ```bash
 python main.py
+```
+
+**Docker (Production):**
+```bash
+# Using docker-compose
+docker-compose up -d
+
+# Or using Docker directly
+docker build -t mcp-tinydb-server .
+docker run -it --rm -v tinydb-data:/data mcp-tinydb-server
 ```
 
 ### Run Tests
@@ -144,6 +159,8 @@ The server is configured in Claude Desktop at:
 4. **Required Parameters for Deletion**: Security feature to prevent accidental data loss
 5. **Comprehensive Error Handling**: All operations wrapped in try-except with user-friendly errors
 6. **Automated Security Scanning**: TruffleHog pre-commit hook prevents committing secrets
+7. **Containerization**: Docker support for isolated, portable deployment
+8. **Configurable Database Path**: Environment variable support for flexible deployment
 
 ### MCP Server Components
 
@@ -222,13 +239,51 @@ The server is configured in Claude Desktop at:
 
 None currently. All PR review feedback has been addressed.
 
+## Docker Deployment
+
+### Container Features
+- **Base Image**: Python 3.14-slim for minimal size
+- **Package Manager**: UV for fast dependency installation
+- **User**: Non-root user (mcpuser, UID 1000) for security
+- **Data Persistence**: Docker volume mounted at `/data`
+- **Environment**: Configurable via `TINYDB_PATH` env var
+
+### Quick Start
+```bash
+# Build and run with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+### Volume Management
+The database is persisted in a Docker named volume:
+```bash
+# List volumes
+docker volume ls
+
+# Inspect volume
+docker volume inspect frosty-blackwell_tinydb-data
+
+# Backup database
+docker run --rm -v frosty-blackwell_tinydb-data:/data -v $(pwd):/backup alpine tar czf /backup/tinydb-backup.tar.gz -C /data .
+
+# Restore database
+docker run --rm -v frosty-blackwell_tinydb-data:/data -v $(pwd):/backup alpine tar xzf /backup/tinydb-backup.tar.gz -C /data
+```
+
 ## Future Enhancements (Potential)
 
 - Advanced query support (beyond simple equality)
 - Batch operations for better performance
-- Database backup/restore functionality
+- Database backup/restore functionality (partially addressed via Docker volumes)
 - Query result pagination for large datasets
 - Support for custom serializers
+- Kubernetes deployment manifests
 
 ---
 

@@ -89,8 +89,8 @@ mcp = FastMCP(
     "and deletion, plus resources for database statistics.",
 )
 
-# Initialize database manager
-db_manager = TinyDBManager()
+# Initialize database manager with configurable path
+db_manager = TinyDBManager(db_path=os.getenv("TINYDB_PATH", "tinydb_data.json"))
 
 
 # Tools

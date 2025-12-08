@@ -1,0 +1,23 @@
+services:
+  mcp-tinydb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-tinydb-server
+    # MCP uses stdio transport, so we use interactive mode
+    stdin_open: true
+    tty: true
+    volumes:
+      # Persist database data
+      - tinydb-data:/data
+      # Optional: mount source for development
+      # - ./src:/app/src:ro
+    environment:
+      - TINYDB_PATH=/data/tinydb_data.json
+    # Restart policy for production
+    restart: unless-stopped
+
+volumes:
+  # Named volume for persistent database storage
+  tinydb-data:
+    driver: local

@@ -33,10 +33,40 @@ uv sync
 
 ### Running the Server
 
+**Option 1: Direct Python (Development)**
+
 Start the MCP server using stdio transport:
 ```bash
 python main.py
 ```
+
+**Option 2: Docker (Production)**
+
+Run the server in a container:
+```bash
+# Build and start with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
+
+# Or build and run directly with Docker
+docker build -t mcp-tinydb-server .
+docker run -it --rm \
+  -v tinydb-data:/data \
+  -e TINYDB_PATH=/data/tinydb_data.json \
+  mcp-tinydb-server
+```
+
+**Benefits of Docker:**
+- Isolated environment
+- Consistent deployment across systems
+- Persistent data storage via volumes
+- No local Python/dependency setup required
+- Non-root user execution for security
 
 ### Configuring MCP Client
 
@@ -141,7 +171,13 @@ Read the tinydb://table/users resource (replace 'users' with your table name)
 
 ## Database
 
-The server creates a `tinydb_data.json` file in the project root to store all data. This file is created automatically on first use.
+The server creates a `tinydb_data.json` file to store all data. This file is created automatically on first use.
+
+**Local Development:** Database is stored in the project root directory
+
+**Docker:** Database is stored in a Docker volume at `/data/tinydb_data.json` inside the container, persisted across container restarts
+
+**Configuration:** Set `TINYDB_PATH` environment variable to customize the database location
 
 ## Project Structure
 
