@@ -2,8 +2,8 @@
 
 import os
 import tempfile
+
 import pytest
-from pathlib import Path
 
 from src.mcp_tinydb_server import TinyDBManager
 

@@ -2,10 +2,9 @@
 
 import os
 from typing import Any
-from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
-from tinydb import TinyDB, Query
+from tinydb import Query, TinyDB
 
 
 class TinyDBManager:
@@ -160,8 +159,8 @@ def query_documents(field: str | None = None, value: Any | None = None,
                 }
 
             # Search using equality query
-            Q = Query()
-            documents = tbl.search(Q[field] == value)
+            q = Query()
+            documents = tbl.search(q[field] == value)
 
         return {
             "success": True,
@@ -199,10 +198,10 @@ def update_documents(field: str, value: Any, updates: dict,
             }
 
         tbl = db_manager.get_table(table)
-        Q = Query()
+        q = Query()
 
         # Update documents matching the criteria
-        doc_ids = tbl.update(updates, Q[field] == value)
+        doc_ids = tbl.update(updates, q[field] == value)
 
         return {
             "success": True,
@@ -230,8 +229,8 @@ def delete_documents(field: str, value: Any, table: str = "default") -> dict:
     """
     try:
         tbl = db_manager.get_table(table)
-        Q = Query()
-        doc_ids = tbl.remove(Q[field] == value)
+        q = Query()
+        doc_ids = tbl.remove(q[field] == value)
 
         return {
             "success": True,

@@ -2,14 +2,15 @@
 
 import os
 import tempfile
+
 import pytest
 
 from src.mcp_tinydb_server import (
     db_manager,
-    insert_document,
     get_database_stats,
-    get_tables_list,
     get_table_contents,
+    get_tables_list,
+    insert_document,
 )
 
 
