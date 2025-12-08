@@ -1,24 +1,57 @@
-# TinyDB MCP Server
+# 🗄️ TinyDB MCP Server
 
-A Model Context Protocol (MCP) server that provides tools and resources for interacting with TinyDB, a lightweight document-oriented database for Python.
+![Python Version](https://img.shields.io/badge/python-3.14+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Tests](https://img.shields.io/badge/tests-44%20passing-brightgreen.svg)
+![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg)
+![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)
+![MCP](https://img.shields.io/badge/MCP-1.23.1+-orange.svg)
 
-## Overview
+A production-ready Model Context Protocol (MCP) server for TinyDB document database operations.
 
-This MCP server enables AI assistants and other MCP clients to perform document database operations using TinyDB. It exposes both tools (for database operations) and resources (for reading database state).
+---
+
+## 📋 Overview
+
+This MCP server enables AI assistants and other MCP clients to perform document database operations using **TinyDB**, a lightweight JSON-based database for Python.
+
+```mermaid
+graph LR
+    A[Claude Desktop] -->|MCP Protocol| B[TinyDB MCP Server]
+    B -->|Read/Write| C[(TinyDB JSON)]
+    B -->|Tools| D[CRUD Operations]
+    B -->|Resources| E[Database Stats]
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+```
+
+**Perfect for:**
+- 🎯 Local development and prototyping
+- 🤖 AI assistant integrations via MCP
+- 📦 Small-scale applications
+- 🧪 Testing and experimentation
 
 ## Features
 
 ### Tools
-- **insert_document** - Insert a document into a table
-- **query_documents** - Query documents with optional field/value filtering
-- **update_documents** - Update documents matching specific criteria
-- **delete_documents** - Delete documents (with optional filtering)
-- **list_tables** - List all available tables in the database
+
+| Tool | Description |
+|------|-------------|
+| **insert_document** | Insert a document into a table |
+| **query_documents** | Query documents with optional field/value filtering |
+| **update_documents** | Update documents matching specific criteria |
+| **delete_documents** | Delete documents (with optional filtering) |
+| **list_tables** | List all available tables in the database |
 
 ### Resources
-- **tinydb://stats** - Database statistics including document counts
-- **tinydb://tables** - List of all tables with metadata
-- **tinydb://table/{table_name}** - Contents of a specific table
+
+| Resource URI | Description |
+|--------------|-------------|
+| `tinydb://stats` | Database statistics including document counts |
+| `tinydb://tables` | List of all tables with metadata |
+| `tinydb://table/{table_name}` | Contents of a specific table |
 
 ## Installation
 
@@ -236,7 +269,7 @@ This project includes VS Code tasks for common operations. Run tasks via `Cmd+Sh
 
 **Available Tasks:**
 - Testing: Run All Tests, Run with Coverage
-- Code Quality: Lint, Fix, Format with Ruff
+- Code Quality: Lint, Fix, Format with Ruff, Type Check (ty)
 - Docker: Build, Start, Stop, View Logs
 - Development: Run MCP Server, Install Dependencies
 

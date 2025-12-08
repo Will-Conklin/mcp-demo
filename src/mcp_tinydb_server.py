@@ -1,23 +1,26 @@
 """MCP Server for TinyDB document database operations."""
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from mcp.server.fastmcp import FastMCP
 from tinydb import Query, TinyDB
+
+if TYPE_CHECKING:
+    from tinydb.table import Table
 
 
 class TinyDBManager:
     """Manager class for TinyDB database operations."""
 
-    def __init__(self, db_path: str = "tinydb_data.json"):
+    def __init__(self, db_path: str = "tinydb_data.json") -> None:
         """Initialize the TinyDB manager.
 
         Args:
             db_path: Path to the TinyDB database file
         """
         self.db_path = db_path
-        self._db = None
+        self._db: TinyDB | None = None
 
     @property
     def db(self) -> TinyDB:
@@ -30,7 +33,7 @@ class TinyDBManager:
             self._db = TinyDB(self.db_path)
         return self._db
 
-    def get_table(self, table_name: str):
+    def get_table(self, table_name: str) -> "Table":
         """Get or create a table.
 
         Args:
@@ -55,10 +58,17 @@ class TinyDBManager:
         Returns:
             Dictionary containing database statistics
         """
-        stats = {
+        tables: dict[str, dict[str, int]] = {}
+
+        # Get document count per table
+        for table_name in self.db.tables():
+            table = self.get_table(table_name)
+            tables[table_name] = {"document_count": len(table)}
+
+        stats: dict[str, Any] = {
             "database_path": os.path.abspath(self.db_path),
             "total_tables": len(self.db.tables()),
-            "tables": {},
+            "tables": tables,
         }
 
         # Get file size if database file exists
@@ -67,14 +77,9 @@ class TinyDBManager:
         else:
             stats["database_size_bytes"] = 0
 
-        # Get document count per table
-        for table_name in self.db.tables():
-            table = self.get_table(table_name)
-            stats["tables"][table_name] = {"document_count": len(table)}
-
         return stats
 
-    def close(self):
+    def close(self) -> None:
         """Close database connection."""
         if self._db is not None:
             self._db.close()

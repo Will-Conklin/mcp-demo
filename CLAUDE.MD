@@ -119,6 +119,12 @@ uv run ruff check --fix .
 uv run ruff format .
 ```
 
+### Type Check
+```bash
+# Run mypy type checker
+uv run mypy src/ main.py
+```
+
 ### Pre-commit Hooks
 ```bash
 # Install pre-commit hooks (one-time setup)
@@ -138,6 +144,7 @@ uv run pre-commit autoupdate
 - Ruff linting (with auto-fix)
 - Ruff formatting
 - TruffleHog secrets scanner (blocks commits containing secrets)
+- Mypy type checking (strict mode on src/, relaxed on tests/)
 - Pytest (runs full test suite)
 
 **Note:** Hooks run automatically on every commit to ensure code quality and security.
@@ -160,8 +167,9 @@ uv run pre-commit autoupdate
 - Lint with Ruff
 - Fix with Ruff
 - Format with Ruff
+- Type Check (ty)
 - Run Pre-commit Hooks
-- Full Quality Check (lint + format + test)
+- Full Quality Check (lint + format + ty + test)
 
 **Docker:**
 - Docker: Build Image (default build task)
@@ -268,6 +276,7 @@ See `.vscode/` directory for complete configuration.
 ### Development
 - **pytest >= 8.0.0**: Testing framework
 - **ruff >= 0.8.0**: Fast Python linter and code formatter
+- **mypy >= 1.13.0**: Static type checker for Python
 - **pre-commit >= 4.0.0**: Git hook framework for automated quality checks
 - **trufflehog** (system): Secrets detection and prevention (installed via Homebrew)
 
