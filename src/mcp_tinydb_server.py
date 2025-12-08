@@ -58,7 +58,7 @@ class TinyDBManager:
         stats = {
             "database_path": os.path.abspath(self.db_path),
             "total_tables": len(self.db.tables()),
-            "tables": {}
+            "tables": {},
         }
 
         # Get file size if database file exists
@@ -70,9 +70,7 @@ class TinyDBManager:
         # Get document count per table
         for table_name in self.db.tables():
             table = self.get_table(table_name)
-            stats["tables"][table_name] = {
-                "document_count": len(table)
-            }
+            stats["tables"][table_name] = {"document_count": len(table)}
 
         return stats
 
@@ -87,8 +85,8 @@ class TinyDBManager:
 mcp = FastMCP(
     name="TinyDB MCP Server",
     instructions="A Model Context Protocol server for TinyDB operations. "
-                 "Provides tools for document insertion, querying, updating, "
-                 "and deletion, plus resources for database statistics."
+    "Provides tools for document insertion, querying, updating, "
+    "and deletion, plus resources for database statistics.",
 )
 
 # Initialize database manager
@@ -112,28 +110,22 @@ def insert_document(data: dict, table: str = "default") -> dict:
         if not isinstance(data, dict):
             return {
                 "success": False,
-                "error": f"Data must be a dictionary, got {type(data).__name__}"
+                "error": f"Data must be a dictionary, got {type(data).__name__}",
             }
 
         # Get table and insert document
         tbl = db_manager.get_table(table)
         doc_id = tbl.insert(data)
 
-        return {
-            "success": True,
-            "document_id": doc_id,
-            "table": table
-        }
+        return {"success": True, "document_id": doc_id, "table": table}
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @mcp.tool()
-def query_documents(field: str | None = None, value: Any | None = None,
-                   table: str = "default") -> dict:
+def query_documents(
+    field: str | None = None, value: Any | None = None, table: str = "default"
+) -> dict:
     """Query documents from TinyDB.
 
     Args:
@@ -153,31 +145,19 @@ def query_documents(field: str | None = None, value: Any | None = None,
         else:
             # Validate that value is provided if field is specified
             if value is None:
-                return {
-                    "success": False,
-                    "error": "Value must be provided when field is specified"
-                }
+                return {"success": False, "error": "Value must be provided when field is specified"}
 
             # Search using equality query
             q = Query()
             documents = tbl.search(q[field] == value)
 
-        return {
-            "success": True,
-            "table": table,
-            "count": len(documents),
-            "documents": documents
-        }
+        return {"success": True, "table": table, "count": len(documents), "documents": documents}
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @mcp.tool()
-def update_documents(field: str, value: Any, updates: dict,
-                    table: str = "default") -> dict:
+def update_documents(field: str, value: Any, updates: dict, table: str = "default") -> dict:
     """Update documents matching criteria.
 
     Args:
@@ -194,7 +174,7 @@ def update_documents(field: str, value: Any, updates: dict,
         if not isinstance(updates, dict):
             return {
                 "success": False,
-                "error": f"Updates must be a dictionary, got {type(updates).__name__}"
+                "error": f"Updates must be a dictionary, got {type(updates).__name__}",
             }
 
         tbl = db_manager.get_table(table)
@@ -206,13 +186,10 @@ def update_documents(field: str, value: Any, updates: dict,
         return {
             "success": True,
             "table": table,
-            "updated_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0)
+            "updated_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0),
         }
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @mcp.tool()
@@ -235,13 +212,10 @@ def delete_documents(field: str, value: Any, table: str = "default") -> dict:
         return {
             "success": True,
             "table": table,
-            "deleted_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0)
+            "deleted_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0),
         }
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @mcp.tool()
@@ -253,16 +227,9 @@ def list_tables() -> dict:
     """
     try:
         tables = db_manager.get_all_tables()
-        return {
-            "success": True,
-            "tables": tables,
-            "count": len(tables)
-        }
+        return {"success": True, "tables": tables, "count": len(tables)}
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 # Resources
@@ -282,12 +249,12 @@ def get_database_stats() -> str:
             f"Database Path: {stats['database_path']}",
             f"Database Size: {stats['database_size_bytes']} bytes",
             f"Total Tables: {stats['total_tables']}",
-            ""
+            "",
         ]
 
-        if stats['tables']:
+        if stats["tables"]:
             lines.append("Tables:")
-            for table_name, table_info in stats['tables'].items():
+            for table_name, table_info in stats["tables"].items():
                 lines.append(f"  - {table_name}: {table_info['document_count']} documents")
         else:
             lines.append("No tables found in database")
@@ -307,11 +274,7 @@ def get_tables_list() -> str:
     try:
         tables = db_manager.get_all_tables()
 
-        lines = [
-            "=== TinyDB Tables ===",
-            f"Total Tables: {len(tables)}",
-            ""
-        ]
+        lines = ["=== TinyDB Tables ===", f"Total Tables: {len(tables)}", ""]
 
         if tables:
             for table_name in tables:
@@ -353,11 +316,7 @@ def get_table_contents(table_name: str) -> str:
         tbl = db_manager.get_table(table_name)
         documents = tbl.all()
 
-        lines = [
-            f"=== Table: {table_name} ===",
-            f"Total Documents: {len(documents)}",
-            ""
-        ]
+        lines = [f"=== Table: {table_name} ===", f"Total Documents: {len(documents)}", ""]
 
         if documents:
             for i, doc in enumerate(documents, 1):

@@ -17,7 +17,7 @@ from src.mcp_tinydb_server import (
 @pytest.fixture(autouse=True)
 def setup_test_db():
     """Set up a fresh test database for each test."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         test_db_path = f.name
 
     # Replace the db_manager's database path
@@ -121,10 +121,7 @@ class TestTablesListResource:
 
     def test_tables_list_shows_sample_fields(self):
         """Test that table list shows sample fields from documents."""
-        insert_document(
-            {"name": "Alice", "age": 30, "city": "NYC"},
-            table="users"
-        )
+        insert_document({"name": "Alice", "age": 30, "city": "NYC"}, table="users")
 
         tables_list = get_tables_list()
 
@@ -172,13 +169,7 @@ class TestTableContentsResource:
     def test_table_contents_shows_all_fields(self):
         """Test that all document fields are shown."""
         insert_document(
-            {
-                "name": "Alice",
-                "age": 30,
-                "city": "NYC",
-                "email": "alice@example.com"
-            },
-            table="users"
+            {"name": "Alice", "age": 30, "city": "NYC", "email": "alice@example.com"}, table="users"
         )
 
         contents = get_table_contents("users")

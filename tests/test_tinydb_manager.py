@@ -11,7 +11,7 @@ from src.mcp_tinydb_server import TinyDBManager
 @pytest.fixture
 def temp_db():
     """Create a temporary database file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         db_path = f.name
 
     manager = TinyDBManager(db_path)

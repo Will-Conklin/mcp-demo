@@ -18,7 +18,7 @@ from src.mcp_tinydb_server import (
 @pytest.fixture(autouse=True)
 def setup_test_db():
     """Set up a fresh test database for each test."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         test_db_path = f.name
 
     # Replace the db_manager's database path
@@ -156,11 +156,7 @@ class TestUpdateDocuments:
         insert_document({"city": "NYC", "status": "active"})
         insert_document({"city": "NYC", "status": "active"})
 
-        result = update_documents(
-            field="city",
-            value="NYC",
-            updates={"status": "inactive"}
-        )
+        result = update_documents(field="city", value="NYC", updates={"status": "inactive"})
 
         assert result["success"] is True
         assert result["updated_count"] >= 2
@@ -169,11 +165,7 @@ class TestUpdateDocuments:
         """Test updating with no matching documents."""
         insert_document({"name": "Alice", "age": 30})
 
-        result = update_documents(
-            field="name",
-            value="Bob",
-            updates={"age": 25}
-        )
+        result = update_documents(field="name", value="Bob", updates={"age": 25})
 
         assert result["success"] is True
         assert result["updated_count"] == 0
@@ -190,9 +182,7 @@ class TestUpdateDocuments:
         insert_document({"name": "Alice"})
 
         result = update_documents(
-            field="name",
-            value="Alice",
-            updates={"email": "alice@example.com"}
+            field="name", value="Alice", updates={"email": "alice@example.com"}
         )
 
         assert result["success"] is True
@@ -239,7 +229,6 @@ class TestDeleteDocuments:
 
         assert result["success"] is True
         assert result["deleted_count"] == 0
-
 
 
 class TestListTables:

@@ -29,6 +29,7 @@ mcp-tinydb-server/
 ├── main.py                     # Entry point
 ├── pyproject.toml             # Dependencies and project config
 ├── uv.lock                    # Dependency lock file
+├── .pre-commit-config.yaml    # Pre-commit hooks configuration
 ├── tinydb_data.json           # Database file (created on first use)
 ├── README.md                  # User documentation
 ├── CLAUDE.MD                  # This file
@@ -98,6 +99,28 @@ uv run ruff check --fix .
 uv run ruff format .
 ```
 
+### Pre-commit Hooks
+```bash
+# Install pre-commit hooks (one-time setup)
+uv run pre-commit install
+
+# Run hooks manually on all files
+uv run pre-commit run --all-files
+
+# Run hooks on staged files only
+uv run pre-commit run
+
+# Update hook versions
+uv run pre-commit autoupdate
+```
+
+**Hooks configured:**
+- Ruff linting (with auto-fix)
+- Ruff formatting
+- Pytest (runs full test suite)
+
+**Note:** Hooks run automatically on every commit to ensure code quality.
+
 ### MCP Server Configuration
 The server is configured in Claude Desktop at:
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -149,9 +172,11 @@ The server is configured in Claude Desktop at:
 ### Development
 - **pytest >= 8.0.0**: Testing framework
 - **ruff >= 0.8.0**: Fast Python linter and code formatter
+- **pre-commit >= 4.0.0**: Git hook framework for automated quality checks
 
 ### Python Version
 - Requires Python >= 3.14
+- Ruff target version: Python 3.13 (for pre-commit compatibility)
 
 ## Testing
 
@@ -184,10 +209,11 @@ The server is configured in Claude Desktop at:
 - Comprehensive docstrings with Args and Returns sections
 - Error handling with try-except and informative error messages
 - Validation of input parameters before operations
-- PEP 8 compliant (enforced by ruff)
+- PEP 8 compliant (enforced by ruff and pre-commit)
 - 100 character line length
 - Double quotes for strings
 - Sorted imports (isort style)
+- Automated quality checks via pre-commit hooks
 
 ## Known Issues & Limitations
 
