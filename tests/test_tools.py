@@ -4,6 +4,7 @@ import os
 import tempfile
 
 import pytest
+from pydantic import ValidationError
 
 from src.mcp_tinydb_server import (
     db_manager,
@@ -13,6 +14,7 @@ from src.mcp_tinydb_server import (
     query_documents,
     update_documents,
 )
+from src.models import DocumentDelete, DocumentInsert, DocumentQuery, DocumentUpdate
 
 
 @pytest.fixture(autouse=True)
@@ -42,34 +44,33 @@ class TestInsertDocument:
 
     def test_insert_valid_document(self):
         """Test inserting a valid document."""
-        result = insert_document({"name": "Alice", "age": 30})
+        result = insert_document(DocumentInsert(data={"name": "Alice", "age": 30}))
 
-        assert result["success"] is True
-        assert "document_id" in result
-        assert result["table"] == "default"
-        assert isinstance(result["document_id"], int)
+        assert result.success is True
+        assert result.data is not None
+        assert "document_id" in result.data
+        assert result.data["table"] == "default"
+        assert isinstance(result.data["document_id"], int)
 
     def test_insert_to_custom_table(self):
         """Test inserting into a custom table."""
-        result = insert_document({"product": "Widget"}, table="products")
+        result = insert_document(DocumentInsert(data={"product": "Widget"}, table="products"))
 
-        assert result["success"] is True
-        assert result["table"] == "products"
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["table"] == "products"
 
     def test_insert_invalid_data_type(self):
         """Test inserting non-dictionary data."""
-        result = insert_document("not a dict")
-
-        assert result["success"] is False
-        assert "error" in result
-        assert "must be a dictionary" in result["error"].lower()
+        with pytest.raises(ValidationError):
+            # Pydantic will raise validation error for invalid data type
+            DocumentInsert(data="not a dict")  # type: ignore
 
     def test_insert_empty_document(self):
         """Test inserting an empty document."""
-        result = insert_document({})
-
-        assert result["success"] is True
-        assert "document_id" in result
+        with pytest.raises(ValidationError):
+            # Pydantic validator will raise error for empty data
+            DocumentInsert(data={})
 
 
 class TestQueryDocuments:
@@ -78,61 +79,65 @@ class TestQueryDocuments:
     def test_query_all_documents(self):
         """Test querying all documents in a table."""
         # Insert test data
-        insert_document({"name": "Alice", "age": 30})
-        insert_document({"name": "Bob", "age": 25})
+        insert_document(DocumentInsert(data={"name": "Alice", "age": 30}))
+        insert_document(DocumentInsert(data={"name": "Bob", "age": 25}))
 
-        result = query_documents()
+        result = query_documents(DocumentQuery())
 
-        assert result["success"] is True
-        assert result["count"] == 2
-        assert len(result["documents"]) == 2
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 2
+        assert len(result.data["documents"]) == 2
 
     def test_query_by_field_value(self):
         """Test querying documents by field and value."""
         # Insert test data
-        insert_document({"name": "Alice", "city": "NYC"})
-        insert_document({"name": "Bob", "city": "LA"})
-        insert_document({"name": "Charlie", "city": "NYC"})
+        insert_document(DocumentInsert(data={"name": "Alice", "city": "NYC"}))
+        insert_document(DocumentInsert(data={"name": "Bob", "city": "LA"}))
+        insert_document(DocumentInsert(data={"name": "Charlie", "city": "NYC"}))
 
-        result = query_documents(field="city", value="NYC")
+        result = query_documents(DocumentQuery(field="city", value="NYC"))
 
-        assert result["success"] is True
-        assert result["count"] == 2
-        assert all(doc["city"] == "NYC" for doc in result["documents"])
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 2
+        assert all(doc["city"] == "NYC" for doc in result.data["documents"])
 
     def test_query_no_matches(self):
         """Test querying with no matching documents."""
-        insert_document({"name": "Alice", "age": 30})
+        insert_document(DocumentInsert(data={"name": "Alice", "age": 30}))
 
-        result = query_documents(field="name", value="Bob")
+        result = query_documents(DocumentQuery(field="name", value="Bob"))
 
-        assert result["success"] is True
-        assert result["count"] == 0
-        assert result["documents"] == []
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 0
+        assert result.data["documents"] == []
 
     def test_query_field_without_value(self):
         """Test querying with field but no value."""
-        result = query_documents(field="name")
-
-        assert result["success"] is False
-        assert "error" in result
+        with pytest.raises(ValidationError):
+            # Pydantic validator will raise error for field without value
+            DocumentQuery(field="name")
 
     def test_query_empty_table(self):
         """Test querying an empty table."""
-        result = query_documents()
+        result = query_documents(DocumentQuery())
 
-        assert result["success"] is True
-        assert result["count"] == 0
-        assert result["documents"] == []
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 0
+        assert result.data["documents"] == []
 
     def test_query_custom_table(self):
         """Test querying from a custom table."""
-        insert_document({"product": "Widget"}, table="products")
+        insert_document(DocumentInsert(data={"product": "Widget"}, table="products"))
 
-        result = query_documents(table="products")
+        result = query_documents(DocumentQuery(table="products"))
 
-        assert result["success"] is True
-        assert result["count"] == 1
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 1
 
 
 class TestUpdateDocuments:
@@ -140,56 +145,62 @@ class TestUpdateDocuments:
 
     def test_update_single_document(self):
         """Test updating a single document."""
-        insert_document({"name": "Alice", "age": 30})
+        insert_document(DocumentInsert(data={"name": "Alice", "age": 30}))
 
-        result = update_documents(field="name", value="Alice", updates={"age": 31})
+        result = update_documents(DocumentUpdate(field="name", value="Alice", updates={"age": 31}))
 
-        assert result["success"] is True
-        assert result["updated_count"] >= 1
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["updated_count"] >= 1
 
         # Verify update
-        query_result = query_documents(field="name", value="Alice")
-        assert query_result["documents"][0]["age"] == 31
+        query_result = query_documents(DocumentQuery(field="name", value="Alice"))
+        assert query_result.data is not None
+        assert query_result.data["documents"][0]["age"] == 31
 
     def test_update_multiple_documents(self):
         """Test updating multiple documents."""
-        insert_document({"city": "NYC", "status": "active"})
-        insert_document({"city": "NYC", "status": "active"})
+        insert_document(DocumentInsert(data={"city": "NYC", "status": "active"}))
+        insert_document(DocumentInsert(data={"city": "NYC", "status": "active"}))
 
-        result = update_documents(field="city", value="NYC", updates={"status": "inactive"})
+        result = update_documents(
+            DocumentUpdate(field="city", value="NYC", updates={"status": "inactive"})
+        )
 
-        assert result["success"] is True
-        assert result["updated_count"] >= 2
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["updated_count"] >= 2
 
     def test_update_no_matches(self):
         """Test updating with no matching documents."""
-        insert_document({"name": "Alice", "age": 30})
+        insert_document(DocumentInsert(data={"name": "Alice", "age": 30}))
 
-        result = update_documents(field="name", value="Bob", updates={"age": 25})
+        result = update_documents(DocumentUpdate(field="name", value="Bob", updates={"age": 25}))
 
-        assert result["success"] is True
-        assert result["updated_count"] == 0
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["updated_count"] == 0
 
     def test_update_invalid_updates_type(self):
         """Test updating with non-dictionary updates."""
-        result = update_documents(field="name", value="Alice", updates="not a dict")
-
-        assert result["success"] is False
-        assert "error" in result
+        with pytest.raises(ValidationError):
+            # Pydantic will raise validation error for invalid updates type
+            DocumentUpdate(field="name", value="Alice", updates="not a dict")  # type: ignore
 
     def test_update_add_new_field(self):
         """Test adding a new field via update."""
-        insert_document({"name": "Alice"})
+        insert_document(DocumentInsert(data={"name": "Alice"}))
 
         result = update_documents(
-            field="name", value="Alice", updates={"email": "alice@example.com"}
+            DocumentUpdate(field="name", value="Alice", updates={"email": "alice@example.com"})
         )
 
-        assert result["success"] is True
+        assert result.success is True
 
         # Verify new field was added
-        query_result = query_documents(field="name", value="Alice")
-        assert "email" in query_result["documents"][0]
+        query_result = query_documents(DocumentQuery(field="name", value="Alice"))
+        assert query_result.data is not None
+        assert "email" in query_result.data["documents"][0]
 
 
 class TestDeleteDocuments:
@@ -197,38 +208,42 @@ class TestDeleteDocuments:
 
     def test_delete_by_field_value(self):
         """Test deleting documents by field and value."""
-        insert_document({"name": "Alice", "age": 30})
-        insert_document({"name": "Bob", "age": 25})
+        insert_document(DocumentInsert(data={"name": "Alice", "age": 30}))
+        insert_document(DocumentInsert(data={"name": "Bob", "age": 25}))
 
-        result = delete_documents(field="name", value="Alice")
+        result = delete_documents(DocumentDelete(field="name", value="Alice"))
 
-        assert result["success"] is True
-        assert result["deleted_count"] >= 1
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["deleted_count"] >= 1
 
         # Verify deletion
-        query_result = query_documents()
-        assert query_result["count"] == 1
-        assert query_result["documents"][0]["name"] == "Bob"
+        query_result = query_documents(DocumentQuery())
+        assert query_result.data is not None
+        assert query_result.data["count"] == 1
+        assert query_result.data["documents"][0]["name"] == "Bob"
 
     def test_delete_multiple_documents(self):
         """Test deleting multiple matching documents."""
-        insert_document({"city": "NYC", "name": "Alice"})
-        insert_document({"city": "NYC", "name": "Bob"})
-        insert_document({"city": "LA", "name": "Charlie"})
+        insert_document(DocumentInsert(data={"city": "NYC", "name": "Alice"}))
+        insert_document(DocumentInsert(data={"city": "NYC", "name": "Bob"}))
+        insert_document(DocumentInsert(data={"city": "LA", "name": "Charlie"}))
 
-        result = delete_documents(field="city", value="NYC")
+        result = delete_documents(DocumentDelete(field="city", value="NYC"))
 
-        assert result["success"] is True
-        assert result["deleted_count"] >= 2
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["deleted_count"] >= 2
 
     def test_delete_no_matches(self):
         """Test deleting with no matching documents."""
-        insert_document({"name": "Alice"})
+        insert_document(DocumentInsert(data={"name": "Alice"}))
 
-        result = delete_documents(field="name", value="Bob")
+        result = delete_documents(DocumentDelete(field="name", value="Bob"))
 
-        assert result["success"] is True
-        assert result["deleted_count"] == 0
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["deleted_count"] == 0
 
 
 class TestListTables:
@@ -238,29 +253,32 @@ class TestListTables:
         """Test listing tables in an empty database."""
         result = list_tables()
 
-        assert result["success"] is True
-        assert result["count"] == 0
-        assert result["tables"] == []
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 0
+        assert result.data["tables"] == []
 
     def test_list_tables_with_data(self):
         """Test listing tables after creating some."""
-        insert_document({"data": "test1"}, table="table1")
-        insert_document({"data": "test2"}, table="table2")
-        insert_document({"data": "test3"}, table="table3")
+        insert_document(DocumentInsert(data={"data": "test1"}, table="table1"))
+        insert_document(DocumentInsert(data={"data": "test2"}, table="table2"))
+        insert_document(DocumentInsert(data={"data": "test3"}, table="table3"))
 
         result = list_tables()
 
-        assert result["success"] is True
-        assert result["count"] == 3
-        assert "table1" in result["tables"]
-        assert "table2" in result["tables"]
-        assert "table3" in result["tables"]
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 3
+        assert "table1" in result.data["tables"]
+        assert "table2" in result.data["tables"]
+        assert "table3" in result.data["tables"]
 
     def test_list_tables_includes_default(self):
         """Test that default table is included when used."""
-        insert_document({"data": "test"})  # Uses default table
+        insert_document(DocumentInsert(data={"data": "test"}))  # Uses default table
 
         result = list_tables()
 
-        assert result["success"] is True
-        assert "default" in result["tables"] or "_default" in result["tables"]
+        assert result.success is True
+        assert result.data is not None
+        assert "default" in result.data["tables"] or "_default" in result.data["tables"]

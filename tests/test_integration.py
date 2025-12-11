@@ -4,10 +4,12 @@ These tests verify the end-to-end functionality of the MCP server,
 including tool calls and resource access directly through the tool functions.
 """
 
+import json
 import os
 import tempfile
 
 import pytest
+from pydantic import ValidationError
 
 from src.mcp_tinydb_server import (
     delete_documents,
@@ -19,6 +21,7 @@ from src.mcp_tinydb_server import (
     query_documents,
     update_documents,
 )
+from src.models import DocumentDelete, DocumentInsert, DocumentQuery, DocumentUpdate
 
 
 @pytest.fixture
@@ -57,101 +60,104 @@ class TestMCPIntegration:
         """Test complete CRUD workflow through MCP tools."""
         # Insert a document
         insert_result = insert_document(
-            data={"name": "Alice", "age": 30, "city": "NYC"}, table="users"
+            DocumentInsert(data={"name": "Alice", "age": 30, "city": "NYC"}, table="users")
         )
-        result_str = str(insert_result)
-        assert "success" in result_str.lower()
-        assert "doc_id" in result_str.lower() or "id" in result_str.lower()
+        assert insert_result.success is True
+        assert insert_result.data is not None
+        assert "document_id" in insert_result.data
 
         # Query the document
-        query_result = query_documents(field="name", value="Alice", table="users")
-        result_str = str(query_result)
-        assert "alice" in result_str.lower()
-        assert "30" in result_str
+        query_result = query_documents(DocumentQuery(field="name", value="Alice", table="users"))
+        assert query_result.success is True
+        assert query_result.data is not None
+        assert query_result.data["count"] == 1
+        assert query_result.data["documents"][0]["age"] == 30
 
         # Update the document
         update_result = update_documents(
-            field="name", value="Alice", updates={"age": 31}, table="users"
+            DocumentUpdate(field="name", value="Alice", updates={"age": 31}, table="users")
         )
-        result_str = str(update_result)
-        assert "success" in result_str.lower() or "1" in result_str
+        assert update_result.success is True
+        assert update_result.data is not None
+        assert update_result.data["updated_count"] >= 1
 
         # Verify update
-        verify_result = query_documents(field="name", value="Alice", table="users")
-        result_str = str(verify_result)
-        assert "31" in result_str
+        verify_result = query_documents(DocumentQuery(field="name", value="Alice", table="users"))
+        assert verify_result.data is not None
+        assert verify_result.data["documents"][0]["age"] == 31
 
         # Delete the document
-        delete_result = delete_documents(field="name", value="Alice", table="users")
-        result_str = str(delete_result)
-        assert "success" in result_str.lower() or "1" in result_str
+        delete_result = delete_documents(DocumentDelete(field="name", value="Alice", table="users"))
+        assert delete_result.success is True
+        assert delete_result.data is not None
+        assert delete_result.data["deleted_count"] >= 1
 
         # Verify deletion
-        final_result = query_documents(field="name", value="Alice", table="users")
-        result_str = str(final_result)
-        assert "0" in result_str or "count': 0" in result_str
+        final_result = query_documents(DocumentQuery(field="name", value="Alice", table="users"))
+        assert final_result.data is not None
+        assert final_result.data["count"] == 0
 
     def test_multi_table_operations(self, temp_db):
         """Test operations across multiple tables."""
         # Insert into users table
-        insert_document(data={"name": "Alice"}, table="users")
+        insert_document(DocumentInsert(data={"name": "Alice"}, table="users"))
 
         # Insert into products table
-        insert_document(data={"product": "Widget"}, table="products")
+        insert_document(DocumentInsert(data={"product": "Widget"}, table="products"))
 
         # List tables
         tables_result = list_tables()
-        result_str = str(tables_result)
-        assert "users" in result_str.lower()
-        assert "products" in result_str.lower()
+        assert tables_result.success is True
+        assert tables_result.data is not None
+        assert "users" in tables_result.data["tables"]
+        assert "products" in tables_result.data["tables"]
 
         # Query each table
-        users_result = query_documents(table="users")
-        result_str = str(users_result)
-        assert "alice" in result_str.lower()
+        users_result = query_documents(DocumentQuery(table="users"))
+        assert users_result.data is not None
+        assert users_result.data["documents"][0]["name"] == "Alice"
 
-        products_result = query_documents(table="products")
-        result_str = str(products_result)
-        assert "widget" in result_str.lower()
+        products_result = query_documents(DocumentQuery(table="products"))
+        assert products_result.data is not None
+        assert products_result.data["documents"][0]["product"] == "Widget"
 
     def test_resources_integration(self, temp_db):
         """Test MCP resources with actual data."""
         # Insert test data
-        insert_document(data={"name": "Alice"}, table="users")
-        insert_document(data={"name": "Bob"}, table="users")
+        insert_document(DocumentInsert(data={"name": "Alice"}, table="users"))
+        insert_document(DocumentInsert(data={"name": "Bob"}, table="users"))
 
-        # Test stats resource
+        # Test stats resource (returns JSON)
         stats_content = get_database_stats()
-        assert "users" in stats_content.lower()
-        assert "2" in stats_content  # 2 documents
+        stats = json.loads(stats_content)
+        assert "users" in stats["tables"]
+        assert stats["tables"]["users"]["document_count"] == 2
 
-        # Test tables resource
+        # Test tables resource (returns JSON)
         tables_content = get_tables_list()
-        assert "users" in tables_content.lower()
+        tables_data = json.loads(tables_content)
+        table_names = [t["name"] for t in tables_data["tables"]]
+        assert "users" in table_names
 
-        # Test table-specific resource
+        # Test table-specific resource (returns formatted text)
         table_content = get_table_contents(table_name="users")
         assert "alice" in table_content.lower()
         assert "bob" in table_content.lower()
 
     def test_error_handling_integration(self, temp_db):
         """Test error handling."""
-        # Try to insert invalid data - should contain error message
-        error_result = insert_document(data="not a dict", table="users")
-        result_str = str(error_result)
-        assert "error" in result_str.lower() or "must be" in result_str.lower()
+        # Try to insert invalid data - Pydantic will raise validation error
+        with pytest.raises(ValidationError):
+            DocumentInsert(data="not a dict")  # type: ignore
 
-        # Try to update with invalid updates
-        error_result = update_documents(
-            field="name", value="Alice", updates="not a dict", table="users"
-        )
-        result_str = str(error_result)
-        assert "error" in result_str.lower() or "must be" in result_str.lower()
+        # Try to update with invalid updates - Pydantic will raise validation error
+        with pytest.raises(ValidationError):
+            DocumentUpdate(field="name", value="Alice", updates="not a dict")  # type: ignore
 
     def test_database_persistence(self, temp_db):
         """Test that data persists in the database file."""
         # Insert data
-        insert_document(data={"name": "Alice"}, table="users")
+        insert_document(DocumentInsert(data={"name": "Alice"}, table="users"))
 
         # Verify file exists and has content
         assert os.path.exists(temp_db)
@@ -165,35 +171,35 @@ class TestMCPIntegration:
     def test_empty_database_operations(self, temp_db):
         """Test operations on empty database."""
         # Query empty table
-        result = query_documents(table="users")
-        result_str = str(result)
-        assert "0" in result_str or "no documents" in result_str.lower()
+        result = query_documents(DocumentQuery(table="users"))
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["count"] == 0
 
         # List tables in empty database
         result = list_tables()
-        # Should return something (dict or string)
-        assert result is not None
+        assert result.success is True
+        assert result.data is not None
 
         # Get stats on empty database
         stats_content = get_database_stats()
-        result_str = str(stats_content)
-        assert "0" in result_str
+        stats = json.loads(stats_content)
+        assert stats["total_tables"] == 0
 
     def test_bulk_operations(self, temp_db):
         """Test inserting and querying multiple documents."""
         # Insert multiple documents
         for i in range(10):
-            insert_document(data={"name": f"User{i}", "index": i}, table="users")
+            insert_document(DocumentInsert(data={"name": f"User{i}", "index": i}, table="users"))
 
         # Query all documents
-        result = query_documents(table="users")
-        result_str = str(result)
-        # Verify we got all 10
-        assert "10" in result_str
+        result = query_documents(DocumentQuery(table="users"))
+        assert result.data is not None
+        assert result.data["count"] == 10
 
         # Update multiple documents
         update_result = update_documents(
-            field="index", value=5, updates={"updated": True}, table="users"
+            DocumentUpdate(field="index", value=5, updates={"updated": True}, table="users")
         )
-        result_str = str(update_result)
-        assert "1" in result_str  # Should update 1 document
+        assert update_result.data is not None
+        assert update_result.data["updated_count"] == 1  # Should update 1 document

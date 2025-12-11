@@ -8,6 +8,15 @@ from mcp.server.fastmcp import FastMCP
 from tinydb import Query, TinyDB
 
 from src.config import configure_logging, settings
+from src.models import (
+    DatabaseStats,
+    DocumentDelete,
+    DocumentInsert,
+    DocumentQuery,
+    DocumentUpdate,
+    OperationResult,
+    TableStats,
+)
 
 if TYPE_CHECKING:
     from tinydb.table import Table
@@ -107,145 +116,132 @@ logfire.info("Database manager initialized", db_path=str(settings.tinydb_path))
 
 # Tools
 @mcp.tool()
-def insert_document(data: dict, table: str = "default") -> dict:
+def insert_document(doc: DocumentInsert) -> OperationResult:
     """Insert a document into TinyDB.
 
     Args:
-        data: Dictionary containing the document data to insert
-        table: Table name (default: "default")
+        doc: DocumentInsert model containing data and table name
 
     Returns:
-        Dictionary with the inserted document ID
+        OperationResult with the inserted document ID
     """
     try:
-        # Validate data is a dictionary
-        if not isinstance(data, dict):
-            logfire.warn("Invalid data type", expected="dict", got=type(data).__name__)
-            return {
-                "success": False,
-                "error": f"Data must be a dictionary, got {type(data).__name__}",
-            }
-
-        with logfire.span("insert_document", table=table, data_keys=list(data.keys())):
+        with logfire.span("insert_document", table=doc.table, data_keys=list(doc.data.keys())):
             # Get table and insert document
-            tbl = db_manager.get_table(table)
-            doc_id = tbl.insert(data)
+            tbl = db_manager.get_table(doc.table)
+            doc_id = tbl.insert(doc.data)
 
-            logfire.info("Document inserted", doc_id=doc_id, table=table)
-            return {"success": True, "document_id": doc_id, "table": table}
+            logfire.info("Document inserted", doc_id=doc_id, table=doc.table)
+            return OperationResult(
+                success=True,
+                message="Document inserted successfully",
+                data={"document_id": doc_id, "table": doc.table},
+            )
     except Exception as e:
-        logfire.error("Insert failed", error=str(e), table=table)
-        return {"success": False, "error": str(e)}
+        logfire.error("Insert failed", error=str(e), table=doc.table)
+        return OperationResult(success=False, message="Failed to insert document", error=str(e))
 
 
 @mcp.tool()
-def query_documents(
-    field: str | None = None, value: Any | None = None, table: str = "default"
-) -> dict:
+def query_documents(query: DocumentQuery) -> OperationResult:
     """Query documents from TinyDB.
 
     Args:
-        field: Field name to query (optional, returns all if None)
-        value: Value to match (required if field is provided)
-        table: Table name (default: "default")
+        query: DocumentQuery model with optional field/value filter and table name
 
     Returns:
-        Dictionary with list of matching documents
+        OperationResult with list of matching documents
     """
     try:
-        tbl = db_manager.get_table(table)
+        tbl = db_manager.get_table(query.table)
 
         # If no field/value, return all documents
-        if field is None:
+        if query.field is None:
             documents = tbl.all()
         else:
-            # Validate that value is provided if field is specified
-            if value is None:
-                return {"success": False, "error": "Value must be provided when field is specified"}
-
             # Search using equality query
             q = Query()
-            documents = tbl.search(q[field] == value)
+            documents = tbl.search(q[query.field] == query.value)
 
-        return {"success": True, "table": table, "count": len(documents), "documents": documents}
+        return OperationResult(
+            success=True,
+            message=f"Found {len(documents)} document(s)",
+            data={"count": len(documents), "documents": documents, "table": query.table},
+        )
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return OperationResult(success=False, message="Failed to query documents", error=str(e))
 
 
 @mcp.tool()
-def update_documents(field: str, value: Any, updates: dict, table: str = "default") -> dict:
+def update_documents(update: DocumentUpdate) -> OperationResult:
     """Update documents matching criteria.
 
     Args:
-        field: Field name to match
-        value: Value to match
-        updates: Dictionary of fields to update
-        table: Table name (default: "default")
+        update: DocumentUpdate model with field, value, updates, and table name
 
     Returns:
-        Dictionary with count of updated documents
+        OperationResult with count of updated documents
     """
     try:
-        # Validate updates is a dictionary
-        if not isinstance(updates, dict):
-            return {
-                "success": False,
-                "error": f"Updates must be a dictionary, got {type(updates).__name__}",
-            }
-
-        tbl = db_manager.get_table(table)
+        tbl = db_manager.get_table(update.table)
         q = Query()
 
         # Update documents matching the criteria
-        doc_ids = tbl.update(updates, q[field] == value)
+        doc_ids = tbl.update(update.updates, q[update.field] == update.value)
 
-        return {
-            "success": True,
-            "table": table,
-            "updated_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0),
-        }
+        updated_count = len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0)
+
+        return OperationResult(
+            success=True,
+            message=f"Updated {updated_count} document(s)",
+            data={"updated_count": updated_count, "table": update.table},
+        )
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return OperationResult(success=False, message="Failed to update documents", error=str(e))
 
 
 @mcp.tool()
-def delete_documents(field: str, value: Any, table: str = "default") -> dict:
+def delete_documents(delete: DocumentDelete) -> OperationResult:
     """Delete documents from TinyDB matching specific criteria.
 
     Args:
-        field: Field name to match (required)
-        value: Value to match (required)
-        table: Table name (default: "default")
+        delete: DocumentDelete model with field, value, and table name
 
     Returns:
-        Dictionary with count of deleted documents
+        OperationResult with count of deleted documents
     """
     try:
-        tbl = db_manager.get_table(table)
+        tbl = db_manager.get_table(delete.table)
         q = Query()
-        doc_ids = tbl.remove(q[field] == value)
+        doc_ids = tbl.remove(q[delete.field] == delete.value)
 
-        return {
-            "success": True,
-            "table": table,
-            "deleted_count": len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0),
-        }
+        deleted_count = len(doc_ids) if isinstance(doc_ids, list) else (1 if doc_ids else 0)
+
+        return OperationResult(
+            success=True,
+            message=f"Deleted {deleted_count} document(s)",
+            data={"deleted_count": deleted_count, "table": delete.table},
+        )
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return OperationResult(success=False, message="Failed to delete documents", error=str(e))
 
 
 @mcp.tool()
-def list_tables() -> dict:
+def list_tables() -> OperationResult:
     """List all available tables/collections in the database.
 
     Returns:
-        Dictionary with list of table names
+        OperationResult with list of table names
     """
     try:
         tables = db_manager.get_all_tables()
-        return {"success": True, "tables": tables, "count": len(tables)}
+        return OperationResult(
+            success=True,
+            message=f"Found {len(tables)} table(s)",
+            data={"tables": tables, "count": len(tables)},
+        )
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return OperationResult(success=False, message="Failed to list tables", error=str(e))
 
 
 # Resources
@@ -259,23 +255,16 @@ def get_database_stats() -> str:
     try:
         stats = db_manager.get_stats()
 
-        # Format as a readable text response
-        lines = [
-            "=== TinyDB Database Statistics ===",
-            f"Database Path: {stats['database_path']}",
-            f"Database Size: {stats['database_size_bytes']} bytes",
-            f"Total Tables: {stats['total_tables']}",
-            "",
-        ]
+        # Create DatabaseStats model from stats dict
+        stats_model = DatabaseStats(
+            database_path=stats["database_path"],
+            database_size_bytes=stats["database_size_bytes"],
+            total_tables=stats["total_tables"],
+            tables=stats["tables"],
+        )
 
-        if stats["tables"]:
-            lines.append("Tables:")
-            for table_name, table_info in stats["tables"].items():
-                lines.append(f"  - {table_name}: {table_info['document_count']} documents")
-        else:
-            lines.append("No tables found in database")
-
-        return "\n".join(lines)
+        # Return JSON string of the model
+        return stats_model.model_dump_json(indent=2)
     except Exception as e:
         return f"Error getting database statistics: {str(e)}"
 
@@ -288,28 +277,27 @@ def get_tables_list() -> str:
         JSON string with table information
     """
     try:
+        import json
+
         tables = db_manager.get_all_tables()
+        table_stats_list: list[TableStats] = []
 
-        lines = ["=== TinyDB Tables ===", f"Total Tables: {len(tables)}", ""]
+        for table_name in tables:
+            tbl = db_manager.get_table(table_name)
+            doc_count = len(tbl)
 
-        if tables:
-            for table_name in tables:
-                tbl = db_manager.get_table(table_name)
-                doc_count = len(tbl)
-                lines.append(f"Table: {table_name}")
-                lines.append(f"  Documents: {doc_count}")
+            # Get sample fields if documents exist
+            sample_fields: list[str] = []
+            if doc_count > 0:
+                sample = tbl.all()[0]
+                sample_fields = list(sample.keys())
 
-                # Show sample document structure if available
-                if doc_count > 0:
-                    sample = tbl.all()[0]
-                    fields = list(sample.keys())
-                    lines.append(f"  Sample fields: {', '.join(fields)}")
+            table_stats_list.append(
+                TableStats(name=table_name, document_count=doc_count, sample_fields=sample_fields)
+            )
 
-                lines.append("")
-        else:
-            lines.append("No tables found in database")
-
-        return "\n".join(lines)
+        # Return JSON string with array of TableStats
+        return json.dumps({"tables": [stat.model_dump() for stat in table_stats_list]}, indent=2)
     except Exception as e:
         return f"Error getting tables list: {str(e)}"
 

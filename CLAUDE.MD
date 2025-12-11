@@ -316,29 +316,47 @@ See `.vscode/` directory for complete configuration.
 ## Testing
 
 ### Test Coverage
+**Original Tests (51)**:
 - **9 tests**: TinyDBManager class functionality
 - **23 tests**: All MCP tools (insert, query, update, delete, list)
 - **14 tests**: All MCP resources (stats, tables, table contents)
 - **7 tests**: Integration tests (full CRUD workflow, multi-table, resources, error handling, persistence, bulk ops)
-- **Total**: 51 tests, all passing
+
+**New Comprehensive Tests (111)**:
+- **36 tests**: Pydantic model validation (test_models.py)
+- **20 tests**: Error handling and edge cases (test_error_handling.py)
+- **22 tests**: Unicode and special characters (test_unicode.py)
+- **14 tests**: Configuration and settings (test_config.py)
+- **19 tests**: Resource error handling (test_resource_errors.py)
+
+**Total**: 162 tests, all passing | **Coverage**: 93.47%
+
+### Test Files
+- `tests/test_tinydb_manager.py` - Database manager unit tests
+- `tests/test_tools.py` - MCP tool tests
+- `tests/test_resources.py` - MCP resource tests
+- `tests/test_integration.py` - End-to-end integration tests
+- `tests/test_models.py` - Pydantic model validation tests
+- `tests/test_error_handling.py` - Error scenarios and edge cases
+- `tests/test_unicode.py` - Unicode and special character tests
+- `tests/test_config.py` - Configuration and settings tests
+- `tests/test_resource_errors.py` - Resource-specific error tests
+- `tests/conftest.py` - Shared fixtures and pytest configuration
 
 ### Test Strategy
 - Each test uses isolated temporary database
 - Automatic cleanup after each test
 - Tests cover success cases, error cases, and edge cases
 - No test relies on external state or real database file
+- Pytest markers for slow, corruption, and permission tests
+- Comprehensive fixtures for corrupted files, large data, unicode
 
 ## Coding Standards
 
 ### Commit Messages
 - Use Conventional Commits syntax: `type: description`
 - Types: `feat`, `fix`, `docs`, `test`, `build`, `refactor`
-- Include Claude Code attribution footer:
-  ```
-  🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-  Co-Authored-By: Claude <noreply@anthropic.com>
-  ```
 
 ### Code Style
 - Type hints for all function parameters and returns
@@ -350,6 +368,14 @@ See `.vscode/` directory for complete configuration.
 - Double quotes for strings
 - Sorted imports (isort style)
 - Automated quality checks via pre-commit hooks
+
+### Test Coverage Requirements
+- **Commits**: Minimum 40% test coverage required for all commits
+- **Pull Requests**: Minimum 70% test coverage required for PR approval
+- **Current Coverage**: 93.47% (162 tests passing)
+- **Coverage Tools**: pytest-cov with HTML and terminal reporting
+- **Run Coverage**: `uv run pytest tests/ --cov=src --cov-report=term --cov-report=html`
+- **View Report**: Open `htmlcov/index.html` in browser after generating coverage
 
 ## Known Issues & Limitations
 

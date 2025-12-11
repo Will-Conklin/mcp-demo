@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class DocumentInsert(BaseModel):
@@ -27,11 +27,14 @@ class DocumentQuery(BaseModel):
     value: Any = Field(default=None, description="Value to match")
     table: str = Field(default="default", description="Table name")
 
-    @field_validator("field", "value")
-    @classmethod
-    def validate_field_value_pair(cls, v: Any) -> Any:
-        """Validate that field and value are provided together."""
-        return v
+    @model_validator(mode="after")
+    def validate_field_value_pair(self) -> "DocumentQuery":
+        """Validate that field and value are provided together or both None."""
+        if (self.field is None) != (self.value is None):
+            raise ValueError(
+                "Both 'field' and 'value' must be provided together, or both must be None"
+            )
+        return self
 
 
 class DocumentUpdate(BaseModel):

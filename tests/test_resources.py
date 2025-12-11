@@ -1,5 +1,6 @@
 """Tests for MCP resources."""
 
+import json
 import os
 import tempfile
 
@@ -12,6 +13,7 @@ from src.mcp_tinydb_server import (
     get_tables_list,
     insert_document,
 )
+from src.models import DocumentInsert
 
 
 @pytest.fixture(autouse=True)
@@ -41,48 +43,54 @@ class TestDatabaseStatsResource:
 
     def test_stats_empty_database(self):
         """Test getting stats from an empty database."""
-        stats = get_database_stats()
+        stats_str = get_database_stats()
 
-        assert isinstance(stats, str)
-        assert "Database Path" in stats
-        assert "Database Size" in stats
-        assert "Total Tables: 0" in stats
+        assert isinstance(stats_str, str)
+        stats = json.loads(stats_str)
+
+        assert "database_path" in stats
+        assert "database_size_bytes" in stats
+        assert "total_tables" in stats
+        assert stats["total_tables"] == 0
 
     def test_stats_with_data(self):
         """Test getting stats from a database with data."""
         # Add test data
-        insert_document({"name": "Alice"}, table="users")
-        insert_document({"name": "Bob"}, table="users")
-        insert_document({"product": "Widget"}, table="products")
+        insert_document(DocumentInsert(data={"name": "Alice"}, table="users"))
+        insert_document(DocumentInsert(data={"name": "Bob"}, table="users"))
+        insert_document(DocumentInsert(data={"product": "Widget"}, table="products"))
 
-        stats = get_database_stats()
+        stats_str = get_database_stats()
 
-        assert isinstance(stats, str)
-        assert "Total Tables: 2" in stats
-        assert "users" in stats
-        assert "products" in stats
-        assert "documents" in stats.lower()
+        assert isinstance(stats_str, str)
+        stats = json.loads(stats_str)
+
+        assert stats["total_tables"] == 2
+        assert "users" in stats["tables"]
+        assert "products" in stats["tables"]
 
     def test_stats_shows_document_counts(self):
         """Test that stats show accurate document counts."""
-        insert_document({"data": "test1"}, table="table1")
-        insert_document({"data": "test2"}, table="table1")
-        insert_document({"data": "test3"}, table="table1")
+        insert_document(DocumentInsert(data={"data": "test1"}, table="table1"))
+        insert_document(DocumentInsert(data={"data": "test2"}, table="table1"))
+        insert_document(DocumentInsert(data={"data": "test3"}, table="table1"))
 
-        stats = get_database_stats()
+        stats_str = get_database_stats()
+        stats = json.loads(stats_str)
 
-        assert "table1" in stats
-        assert "3 documents" in stats
+        assert "table1" in stats["tables"]
+        assert stats["tables"]["table1"]["document_count"] == 3
 
     def test_stats_shows_file_size(self):
         """Test that stats include file size."""
-        insert_document({"data": "test"})
+        insert_document(DocumentInsert(data={"data": "test"}))
 
-        stats = get_database_stats()
+        stats_str = get_database_stats()
+        stats = json.loads(stats_str)
 
-        assert "bytes" in stats
+        assert "database_size_bytes" in stats
         # File size should be greater than 0 after inserting data
-        assert "0 bytes" not in stats or "Database Size: 0 bytes" not in stats
+        assert stats["database_size_bytes"] > 0
 
 
 class TestTablesListResource:
@@ -90,44 +98,55 @@ class TestTablesListResource:
 
     def test_tables_list_empty_database(self):
         """Test getting table list from empty database."""
-        tables_list = get_tables_list()
+        tables_str = get_tables_list()
 
-        assert isinstance(tables_list, str)
-        assert "Total Tables: 0" in tables_list
-        assert "No tables found" in tables_list
+        assert isinstance(tables_str, str)
+        tables_data = json.loads(tables_str)
+
+        assert "tables" in tables_data
+        assert len(tables_data["tables"]) == 0
 
     def test_tables_list_with_tables(self):
         """Test getting table list with multiple tables."""
-        insert_document({"name": "Alice"}, table="users")
-        insert_document({"product": "Widget"}, table="products")
-        insert_document({"order": "123"}, table="orders")
+        insert_document(DocumentInsert(data={"name": "Alice"}, table="users"))
+        insert_document(DocumentInsert(data={"product": "Widget"}, table="products"))
+        insert_document(DocumentInsert(data={"order": "123"}, table="orders"))
 
-        tables_list = get_tables_list()
+        tables_str = get_tables_list()
+        tables_data = json.loads(tables_str)
 
-        assert "Total Tables: 3" in tables_list
-        assert "users" in tables_list
-        assert "products" in tables_list
-        assert "orders" in tables_list
+        assert len(tables_data["tables"]) == 3
+        table_names = [t["name"] for t in tables_data["tables"]]
+        assert "users" in table_names
+        assert "products" in table_names
+        assert "orders" in table_names
 
     def test_tables_list_shows_document_counts(self):
         """Test that table list shows document counts."""
-        insert_document({"data": "test1"}, table="test_table")
-        insert_document({"data": "test2"}, table="test_table")
+        insert_document(DocumentInsert(data={"data": "test1"}, table="test_table"))
+        insert_document(DocumentInsert(data={"data": "test2"}, table="test_table"))
 
-        tables_list = get_tables_list()
+        tables_str = get_tables_list()
+        tables_data = json.loads(tables_str)
 
-        assert "test_table" in tables_list
-        assert "Documents: 2" in tables_list
+        test_table = next(t for t in tables_data["tables"] if t["name"] == "test_table")
+        assert test_table["document_count"] == 2
 
     def test_tables_list_shows_sample_fields(self):
         """Test that table list shows sample fields from documents."""
-        insert_document({"name": "Alice", "age": 30, "city": "NYC"}, table="users")
+        insert_document(
+            DocumentInsert(data={"name": "Alice", "age": 30, "city": "NYC"}, table="users")
+        )
 
-        tables_list = get_tables_list()
+        tables_str = get_tables_list()
+        tables_data = json.loads(tables_str)
 
-        assert "Sample fields" in tables_list
+        users_table = next(t for t in tables_data["tables"] if t["name"] == "users")
+        assert "sample_fields" in users_table
         # At least some of the fields should be shown
-        assert "name" in tables_list or "age" in tables_list or "city" in tables_list
+        assert "name" in users_table["sample_fields"]
+        assert "age" in users_table["sample_fields"]
+        assert "city" in users_table["sample_fields"]
 
 
 class TestTableContentsResource:
@@ -136,7 +155,7 @@ class TestTableContentsResource:
     def test_table_contents_empty_table(self):
         """Test getting contents of an empty table."""
         # Create an empty table by querying it
-        insert_document({"data": "temp"}, table="test_table")
+        insert_document(DocumentInsert(data={"data": "temp"}, table="test_table"))
         db_manager.get_table("test_table").truncate()
 
         contents = get_table_contents("test_table")
@@ -148,8 +167,8 @@ class TestTableContentsResource:
 
     def test_table_contents_with_data(self):
         """Test getting contents of a table with data."""
-        insert_document({"name": "Alice", "age": 30}, table="users")
-        insert_document({"name": "Bob", "age": 25}, table="users")
+        insert_document(DocumentInsert(data={"name": "Alice", "age": 30}, table="users"))
+        insert_document(DocumentInsert(data={"name": "Bob", "age": 25}, table="users"))
 
         contents = get_table_contents("users")
 
@@ -169,7 +188,10 @@ class TestTableContentsResource:
     def test_table_contents_shows_all_fields(self):
         """Test that all document fields are shown."""
         insert_document(
-            {"name": "Alice", "age": 30, "city": "NYC", "email": "alice@example.com"}, table="users"
+            DocumentInsert(
+                data={"name": "Alice", "age": 30, "city": "NYC", "email": "alice@example.com"},
+                table="users",
+            )
         )
 
         contents = get_table_contents("users")
@@ -184,7 +206,7 @@ class TestTableContentsResource:
     def test_table_contents_multiple_documents(self):
         """Test that all documents are shown."""
         for i in range(5):
-            insert_document({"id": i, "value": f"test{i}"}, table="data")
+            insert_document(DocumentInsert(data={"id": i, "value": f"test{i}"}, table="data"))
 
         contents = get_table_contents("data")
 
@@ -195,7 +217,7 @@ class TestTableContentsResource:
 
     def test_table_contents_formatting(self):
         """Test that table contents are well-formatted."""
-        insert_document({"key": "value"}, table="test")
+        insert_document(DocumentInsert(data={"key": "value"}, table="test"))
 
         contents = get_table_contents("test")
 
