@@ -1,0 +1,38 @@
+repos:
+  # Ruff linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix]
+      # Run the formatter
+      - id: ruff-format
+
+  # TruffleHog secrets detection
+  - repo: local
+    hooks:
+      - id: trufflehog
+        name: TruffleHog secrets scanner
+        entry: /opt/homebrew/bin/trufflehog filesystem . --only-verified --fail
+        language: system
+        pass_filenames: false
+
+      # Type checking with ty
+      - id: ty
+        name: ty
+        entry: uv run ty check
+        language: system
+        types: [python]
+        require_serial: true
+
+  # Run tests before commit
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
